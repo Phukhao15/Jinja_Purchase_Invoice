@@ -1,0 +1,62 @@
+{# ------------------- Read LC Item -------------------- #}
+<style>
+    thead {display: table-header-group;}
+</style>
+{% if doc.refer_to_landed_cost_voucher %}
+<table class="table table-bordered table-condensed">
+    <caption><strong>Landed Cost Item</strong></caption>
+    <thead class="repeat table_header">
+    <tr>
+        <th>no</th>
+        <th>Receipt Document</th>
+        <th>Item</th>
+        <th>Description</th>
+        <th>Qty</th>
+        <th>Amount</th>
+                <th>Item Charge</th>
+    </tr>
+    </thead>
+    {% set summ_amt = [0] %}
+    {% set xsql = "Select lci.item_code, lci.qty, lci.receipt_document, lci.description, lci.applicable_charges  
+        from `tabLanded Cost Item` as lci 
+		where lci.parent = " + "'" + doc.refer_to_landed_cost_voucher + "'" %}  
+    {% set xitems = frappe.db.sql(xsql, as_dict=1) %}
+    {% for item in xitems  %}
+        {#          + " and pri.qty         = '" + str(item.qty)	    + "'" #}
+        {% set w_sql = "Select  pri.base_amount from `tabPurchase Receipt Item` pri 
+                Where   pri.parent          = '" + item.receipt_document + "'"
+                    + " and pri.item_code   = '" + item.item_code   + "'" 
+                    + " and pri.description = '" +  item.description + "'" %}  
+        {% set PR_items = frappe.db.sql(w_sql, as_dict=1) %}
+        {% set w_base_amount = 0.0 %}
+        {% for w_item in PR_items  %}
+            {% set w_base_amount = w_item.base_amount %}
+        {% endfor %}        
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ item.receipt_document }}</td>
+            <td>{{ item.item_code }}</td>
+            <td>{{ item.description }}</td>
+            <td style="text-align:center">{{ frappe.utils.fmt_money(item.qty,format='Thai') }}</td>
+                       <td style="text-align:right">{{ frappe.utils.fmt_money(w_base_amount) }}</td>
+            <td style="text-align:right">{{ frappe.utils.fmt_money(item.applicable_charges) }}</td>
+            
+        </tr>
+        {% if summ_amt.append(summ_amt[-1]  + item.applicable_charges )  %}{% endif %}
+    {% endfor %}
+    <tr>
+        <td> </td><td> </td><td> </td>
+        <td style="text-align:right"><strong> Total </strong></td>
+        <td> </td>  <td> </td>
+        <td style="text-align:right"><strong> {{frappe.utils.fmt_money(summ_amt[-1])}} </strong></td>
+    </tr>
+</table>
+{% else %}
+<table class="table table-bordered table-condensed">
+    <caption><strong>NO LANADED COST link</strong></caption>
+    <div class="text-center" document-status="draft">
+    <h4 style="margin: 0px;"> == This Invoice does not have a link to Landed Cost == </h4>
+    <h4 style="margin: 0px;"> == refer_to_landed_cost_vouche is NULL == </h4>
+    </div>
+</table>
+{% endif %}

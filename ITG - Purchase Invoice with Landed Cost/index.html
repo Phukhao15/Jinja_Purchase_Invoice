@@ -1,0 +1,43 @@
+{# customize xhead and xsubhead per your requirements #}
+
+            {% if doc.name[:7] == 'ITG-PIV' %} {% set xhead  = 'ใบสำคัญตั้งเจ้าหนี้' %}    {% set xsubhead  = 'Account Payable Voucher' %}
+{% else %}  {% if doc.name[:7] == 'ITG-PAC' %} {% set xhead  = 'ใบสำคัญตั้งเจ้าหนี้' %}    {% set xsubhead  = 'Account Payable Voucher' %}
+{% else %}                       {% set xhead     = 'Purchase Invoice' %} {% set xsubhead  = doc.name %}
+{% endif %} {% endif %}
+
+<div class="print-heading">				
+<h2><div>{{ xhead }}</div>
+<small class="sub-heading">{{ xsubhead }}</small>				
+</h2></div>
+
+    {%- if doc.docstatus == 0 -%}
+	<div class="text-center" document-status="draft">
+		<h4 style="margin: 0px;"> == DRAFT == </h4>
+	</div>
+	{%- endif -%}
+
+    <div class="row margin-bottom">
+        <div class="col-xs-6">
+            <table>
+            <tr><td><strong>Supplier Name: </strong></td><td>{{ doc.supplier_name }}</td></tr>
+            <tr><td><strong>Address: </strong></td><td>{{doc.address_display}}</td></tr>
+			<tr><td><strong>Tax Id: </strong> </td><td>{{doc.tax_id}}</td></tr>
+			<tr><td><strong>NAV Ref.: </strong> </td><td>{{doc.nav_ref}}</td></tr>
+            </table>
+        </div>
+        <div class="col-xs-6">
+            <table>
+                <tr><td><strong>Document No: </strong></td><td>{{ doc.name }}</td></tr>
+				<tr><td><strong>Posting Date: </strong></td><td>{{frappe.utils.format_date(doc.posting_date) }}</td></tr>
+				<tr><td><strong>Tax Inv.No: </strong></td><td>{{ doc.bill_no }}</td></tr>
+				<tr><td><strong>Tax Inv.Date: </strong></td><td>{{frappe.utils.format_date(doc.bill_date) }}</td></tr>
+				<tr><td><strong>Payment Term: </strong></td><td>{{ doc.payment_terms_template }}</td></tr>
+				<tr><td><strong>Due Date: </strong></td><td>{{ frappe.utils.format_date(doc.due_date) }}</td></tr>
+				{% if doc.currency[:3] == 'THB' %} {% set xrate  = 'THB' %} {% set xsubrate  = 'THB:1:' %}
+				<tr><td><strong>Exch. Rate: </strong></td><td>{{ xrate }}</td></tr>
+				{% else %}  {% if doc.currency[:5] == 'USD-P' %} {% set xrate  = 'USD-P'%} {% set xsubrate  = 'USD-P:38:' %}
+				<tr><td><strong>Exch. Rate: </strong></td><td>{{ xrate }}({{ frappe.utils.fmt_money(doc.conversion_rate)}})</td></tr>
+				{% endif %} {% endif %}
+			</table>
+        </div>
+    </div>
