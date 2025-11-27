@@ -13,21 +13,20 @@
         <th>Description</th>
         <th>Qty</th>
         <th>Amount</th>
-                <th>Item Charge</th>
+        <th>Item Charge</th>
     </tr>
     </thead>
     {% set summ_amt = [0] %}
     {% set xsql = "Select lci.item_code, lci.qty, lci.receipt_document, lci.description, lci.applicable_charges  
         from `tabLanded Cost Item` as lci 
-		where lci.parent = " + "'" + doc.refer_to_landed_cost_voucher + "'" %}  
-    {% set xitems = frappe.db.sql(xsql, as_dict=1) %}
+		where lci.parent = %s" %}  
+    {% set xitems = frappe.db.sql(xsql, doc.refer_to_landed_cost_voucher, as_dict=1) %}
     {% for item in xitems  %}
-        {#          + " and pri.qty         = '" + str(item.qty)	    + "'" #}
-        {% set w_sql = "Select  pri.base_amount from `tabPurchase Receipt Item` pri 
-                Where   pri.parent          = '" + item.receipt_document + "'"
-                    + " and pri.item_code   = '" + item.item_code   + "'" 
-                    + " and pri.description = '" +  item.description + "'" %}  
-        {% set PR_items = frappe.db.sql(w_sql, as_dict=1) %}
+        {% set w_sql = "Select pri.base_amount from `tabPurchase Receipt Item` pri 
+                Where pri.parent = %s 
+                  and pri.item_code = %s 
+                  and pri.description = %s" %}  
+        {% set PR_items = frappe.db.sql(w_sql, (item.receipt_document, item.item_code, item.description), as_dict=1) %}
         {% set w_base_amount = 0.0 %}
         {% for w_item in PR_items  %}
             {% set w_base_amount = w_item.base_amount %}
@@ -38,16 +37,15 @@
             <td>{{ item.item_code }}</td>
             <td>{{ item.description }}</td>
             <td style="text-align:center">{{ frappe.utils.fmt_money(item.qty,format='Thai') }}</td>
-                       <td style="text-align:right">{{ frappe.utils.fmt_money(w_base_amount) }}</td>
+            <td style="text-align:right">{{ frappe.utils.fmt_money(w_base_amount) }}</td>
             <td style="text-align:right">{{ frappe.utils.fmt_money(item.applicable_charges) }}</td>
-            
         </tr>
-        {% if summ_amt.append(summ_amt[-1]  + item.applicable_charges )  %}{% endif %}
+        {% if summ_amt.append(summ_amt[-1] + item.applicable_charges) %}{% endif %}
     {% endfor %}
     <tr>
         <td> </td><td> </td><td> </td>
         <td style="text-align:right"><strong> Total </strong></td>
-        <td> </td>  <td> </td>
+        <td> </td><td> </td>
         <td style="text-align:right"><strong> {{frappe.utils.fmt_money(summ_amt[-1])}} </strong></td>
     </tr>
 </table>
